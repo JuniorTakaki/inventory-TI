@@ -47,9 +47,9 @@ jobs:
           python collector.py
 
           # 4. Para o servidor Flask de forma graciosa
-          # O comando 'pkill' encontra e termina o processo do Python que está rodando o 'api_receiver.py'
+          # O comando 'Stop-Process' encontra e termina o processo do Python que está rodando o 'api_receiver.py'
           echo "Desligando o servidor da API..."
-          pkill -f "python api_receiver.py"
+          Stop-Process -f "python api_receiver.py"
           
           # 5. Verifica se o banco de dados foi criado e populado
           echo "Verificando o banco de dados..."
