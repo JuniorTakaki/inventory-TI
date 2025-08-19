@@ -1,4 +1,4 @@
-name: Teste de Integração da API de Inventário
+name: Teste de Integração da API de inventario
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout do código
+      - name: Checkout do codigo
         uses: actions/checkout@v4
 
       - name: Configurar Python 3.11
@@ -20,14 +20,14 @@ jobs:
           python-version: '3.11'
           cache: 'pip' # Adiciona cache para acelerar a instalação
 
-      - name: Instalar dependências
+      - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Verificar qualidade do código com Flake8 (Linter)
+      - name: Verificar qualidade do codigo com Flake8 (Linter)
         run: |
           pip install flake8
           # --count: mostra o total de erros
-          # --select=E9,F63,F7,F82: foca em erros graves (sintaxe, imports não usados, etc.)
+          # --select=E9,F63,F7,F82: foca em erros graves (sintaxe, imports nao usados, etc.)
           # --show-source: mostra a linha com erro
           # O workflow continuará mesmo se encontrar erros leves.
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
@@ -49,7 +49,7 @@ jobs:
           # 4. Para o servidor Flask de forma graciosa
           # O comando 'Stop-Process' encontra e termina o processo do Python que está rodando o 'api_receiver.py'
           echo "Desligando o servidor da API..."
-          Stop-Process -f "python api_receiver.py"
+          Stop-Process -Name python -Force
           
           # 5. Verifica se o banco de dados foi criado e populado
           echo "Verificando o banco de dados..."
