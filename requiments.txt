@@ -1,0 +1,7 @@
+# Dependências do Servidor
+flask
+
+# Dependências do Coletor
+requests
+psutil
+py-wmi; platform_system == "Windows" # Só instala wmi no Windows

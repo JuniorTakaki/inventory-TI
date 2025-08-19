@@ -1,0 +1,56 @@
+name: Teste de Integração da API de Inventário
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-integration:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # Adiciona cache para acelerar a instalação
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Verificar qualidade do código com Flake8 (Linter)
+        run: |
+          pip install flake8
+          # --count: mostra o total de erros
+          # --select=E9,F63,F7,F82: foca em erros graves (sintaxe, imports não usados, etc.)
+          # --show-source: mostra a linha com erro
+          # O workflow continuará mesmo se encontrar erros leves.
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+
+      - name: Rodar Teste de Integração (API + Coletor)
+        run: |
+          # 1. Inicia o servidor Flask em background (o '&' faz ele rodar em segundo plano)
+          echo "Iniciando o servidor da API..."
+          python api_receiver.py &
+
+          # 2. Aguarda alguns segundos para garantir que o servidor subiu
+          echo "Aguardando o servidor ficar online..."
+          sleep 5
+
+          # 3. Executa o script coletor, que vai enviar os dados para o servidor local
+          echo "Executando o coletor para enviar dados..."
+          python collector.py
+
+          # 4. Para o servidor Flask de forma graciosa
+          # O comando 'pkill' encontra e termina o processo do Python que está rodando o 'api_receiver.py'
+          echo "Desligando o servidor da API..."
+          pkill -f "python api_receiver.py"
+          
+          # 5. Verifica se o banco de dados foi criado e populado
+          echo "Verificando o banco de dados..."
+          python verify_db.py
