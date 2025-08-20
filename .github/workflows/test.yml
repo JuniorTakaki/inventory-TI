@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip' # Adiciona cache para acelerar a instalação
+          cache: 'pip'
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
@@ -26,31 +26,34 @@ jobs:
       - name: Verificar qualidade do codigo com Flake8 (Linter)
         run: |
           pip install flake8
-          # --count: mostra o total de erros
-          # --select=E9,F63,F7,F82: foca em erros graves (sintaxe, imports nao usados, etc.)
-          # --show-source: mostra a linha com erro
-          # O workflow continuará mesmo se encontrar erros leves.
+          # Foca em erros graves de sintaxe e imports
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
 
       - name: Rodar Teste de Integração (API + Coletor)
+        shell: pwsh # Define explicitamente o shell como PowerShell Core
         run: |
-          # 1. Inicia o servidor Flask em background (o '&' faz ele rodar em segundo plano)
+          # 0. Diagnóstico: Lista a estrutura de arquivos para confirmar os caminhos
+          echo "Verificando a estrutura de arquivos..."
+          Get-ChildItem -Recurse
+          echo "-------------------------------------"
+          
+          # 1. Inicia o servidor da API a partir da pasta 'server' em background
           echo "Iniciando o servidor da API..."
-          python api_receiver.py &
-
+          $api_job = Start-Job -ScriptBlock { python api_receiver.py } -WorkingDirectory ./server
+          
           # 2. Aguarda alguns segundos para garantir que o servidor subiu
           echo "Aguardando o servidor ficar online..."
-          sleep 5
-
-          # 3. Executa o script coletor, que vai enviar os dados para o servidor local
+          Start-Sleep -Seconds 5
+          
+          # 3. Executa o script coletor a partir da pasta 'agent'
           echo "Executando o coletor para enviar dados..."
-          python collector.py
-
-          # 4. Para o servidor Flask de forma graciosa
-          # O comando 'Stop-Process' encontra e termina o processo do Python que está rodando o 'api_receiver.py'
+          python ./agent/collector.py
+          
+          # 4. Para o servidor Flask de forma segura usando a referência do job
           echo "Desligando o servidor da API..."
-          Stop-Process -Name python -Force
+          Stop-Job -Job $api_job
+          Remove-Job -Job $api_job # Limpa o job da sessão
           
           # 5. Verifica se o banco de dados foi criado e populado
           echo "Verificando o banco de dados..."
-          python verify_db.py
+          python ./db/verify_db.py
